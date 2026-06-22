@@ -53,12 +53,15 @@ class FaissStore:
         # Normalize vectors for cosine similarity via IndexFlatIP
         faiss.normalize_L2(embeddings)
         
+        start_idx = self.index.ntotal
+        
         # Add to FAISS
         self.index.add(embeddings)
         
         # Add metadata
-        for chunk in chunks:
+        for idx, chunk in enumerate(chunks):
             self.metadata.append({
+                "faiss_index": start_idx + idx,
                 "chunk_id": chunk.chunk_id,
                 "doc_id": doc_id,
                 "source_file": source_file,
@@ -80,11 +83,18 @@ class FaissStore:
         new_metadata = []
         new_embeddings_list = []
         
-        for i, meta in enumerate(self.metadata):
+        for meta in self.metadata:
             if meta.get("doc_id") != doc_id:
+                # Reconstruct vector using the explicitly tracked position
+                pos = meta.get("faiss_index")
+                if pos is None:
+                    # Fallback for older metadata
+                    pos = self.metadata.index(meta)
+                vec = self.index.reconstruct(pos)
+                
+                # Update the position to be contiguous for the rebuilt index
+                meta["faiss_index"] = len(new_metadata)
                 new_metadata.append(meta)
-                # Reconstruct vector i
-                vec = self.index.reconstruct(i)
                 new_embeddings_list.append(vec)
                 
         # Rebuild index

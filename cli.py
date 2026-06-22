@@ -11,7 +11,10 @@ from storage.document_store import DocumentStore
 from models.document import Document
 from vectorstore.store import FaissStore
 from vectorstore.retriever import search as vector_search
+from genai.qa import answer as genai_ask
+from genai.summarizer import summarize_document
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
+from rich.markdown import Markdown
 
 app = typer.Typer(help="ResearchMind Ingestion Pipeline CLI")
 console = Console()
@@ -327,6 +330,43 @@ def search(query: str = typer.Argument(..., help="The search query")):
         )
         
     console.print(table)
+
+@app.command()
+def ask(query: str = typer.Argument(..., help="The search query or question"), doc_id: str = typer.Option(None, "--doc", help="Optional document ID to scope the search")):
+    """Asks a question using the retrieved context from the vector store."""
+    with console.status(f"[bold green]Generating answer for '{query}'...[/]"):
+        try:
+            result = genai_ask(query, vstore, top_k=5, doc_id=doc_id)
+        except Exception as e:
+            console.print(f"[bold red]Error:[/] {str(e)}")
+            raise typer.Exit(code=1)
+            
+    console.print(Panel(Markdown(result.answer), title="Answer", border_style="green"))
+    
+    if result.sources:
+        table = Table(title="Sources Cited")
+        table.add_column("Source File", style="cyan")
+        table.add_column("Chunk", style="yellow")
+        table.add_column("Relevance", style="magenta")
+        
+        for src in result.sources:
+            table.add_row(src.source_file, str(src.chunk_index), f"{src.score:.4f}")
+            
+        console.print(table)
+    else:
+        console.print("[yellow]No sources were found to ground this answer.[/]")
+
+@app.command()
+def summarize(doc_id: str = typer.Argument(..., help="The UUID of the document to summarize")):
+    """Generates a hierarchical summary of a document."""
+    with console.status(f"[bold green]Generating hierarchical summary for {doc_id}...[/]"):
+        try:
+            summary = summarize_document(doc_id, store)
+        except Exception as e:
+            console.print(f"[bold red]Error:[/] {str(e)}")
+            raise typer.Exit(code=1)
+            
+    console.print(Panel(Markdown(summary.full_summary), title=f"Summary: {summary.source_file}", border_style="blue"))
 
 if __name__ == "__main__":
     app()
