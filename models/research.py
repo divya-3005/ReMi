@@ -3,6 +3,26 @@ from typing import List, Dict, Any, Optional
 from vectorstore.retriever import SearchResult
 
 @dataclass
+class EvidenceSpan:
+    chunk_index: int
+    source_file: str
+    start_char: int
+    end_char: int
+    span_text: str
+    relevance_score: float
+
+@dataclass
+class LinkedSentence:
+    sentence: str
+    evidence: List[EvidenceSpan]
+    grounded: bool
+
+@dataclass
+class LinkedAnswer:
+    answer: str
+    sentences: List[LinkedSentence]
+
+@dataclass
 class SubQuestion:
     id: str
     question: str
@@ -22,3 +42,6 @@ class ResearchReport:
     findings: List[Finding]
     final_report: str
     created_at: str
+    linked_report: Optional[LinkedAnswer] = None
+    faithfulness_score: float = 0.0
+    coverage_score: float = 0.0

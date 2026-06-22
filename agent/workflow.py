@@ -9,6 +9,9 @@ from agent.researcher import research_subquestion
 from agent.analyzer import analyze_findings
 from agent.synthesizer import synthesize
 from vectorstore.store import FaissStore
+from grounding.linker import link
+from grounding.scorer import faithfulness_score, coverage_score
+from grounding.report import render
 
 console = Console()
 
@@ -53,12 +56,31 @@ def run_research(question: str, store: FaissStore, min_confidence: float = 0.3) 
         console.print(f"[bold red]Synthesis failed:[/] {str(e)}")
         raise
 
+    console.print("[bold cyan]Step 5: Grounding evidence...[/]")
+    try:
+        linked_report = link(final_report, cleaned_findings)
+        faith = faithfulness_score(linked_report)
+        cov = coverage_score(question, linked_report)
+        grounded_md = render(linked_report)
+        
+        # Override the final report with the grounded version
+        final_report = grounded_md
+        console.print(f"  [green]Grounding complete. Faithfulness: {faith:.2f} | Coverage: {cov:.2f}[/]")
+    except Exception as e:
+        console.print(f"  [yellow]Grounding failed, falling back to ungrounded report:[/] {str(e)}")
+        linked_report = None
+        faith = 0.0
+        cov = 0.0
+
     report = ResearchReport(
         research_question=question,
         sub_questions=sub_questions,
         findings=cleaned_findings,
         final_report=final_report,
-        created_at=datetime.now(timezone.utc).isoformat()
+        created_at=datetime.now(timezone.utc).isoformat(),
+        linked_report=linked_report,
+        faithfulness_score=faith,
+        coverage_score=cov
     )
 
     # Save to JSON

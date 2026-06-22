@@ -14,6 +14,10 @@ from vectorstore.retriever import search as vector_search
 from genai.qa import answer as genai_ask
 from genai.summarizer import summarize_document
 from agent.workflow import run_research
+from grounding.linker import link
+from grounding.scorer import faithfulness_score, coverage_score
+from grounding.report import render
+from models.research import Finding
 import json
 import os
 import glob
@@ -341,11 +345,20 @@ def ask(query: str = typer.Argument(..., help="The search query or question"), d
     with console.status(f"[bold green]Generating answer for '{query}'...[/]"):
         try:
             result = genai_ask(query, vstore, top_k=5, doc_id=doc_id)
+            
+            # Create a mock finding to use with linker
+            finding = Finding(sub_question_id="ask", answer=result.answer, sources=result.sources, confidence_score=1.0)
+            linked = link(result.answer, [finding])
+            grounded_md = render(linked)
+            faith = faithfulness_score(linked)
+            cov = coverage_score(query, linked)
+            
         except Exception as e:
             console.print(f"[bold red]Error:[/] {str(e)}")
             raise typer.Exit(code=1)
             
-    console.print(Panel(Markdown(result.answer), title="Answer", border_style="green"))
+    console.print(Panel(Markdown(grounded_md), title="Answer", border_style="green"))
+    console.print(f"[bold cyan]Faithfulness:[/] {faith:.2f} | [bold cyan]Coverage:[/] {cov:.2f}")
     
     if result.sources:
         table = Table(title="Sources Cited")
@@ -385,6 +398,7 @@ def research(
         raise typer.Exit(code=1)
         
     console.print(Panel(Markdown(report.final_report), title="Research Report", border_style="magenta"))
+    console.print(f"[bold cyan]Faithfulness:[/] {report.faithfulness_score:.2f} | [bold cyan]Coverage:[/] {report.coverage_score:.2f}")
 
 @app.command()
 def reports():
