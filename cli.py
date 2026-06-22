@@ -13,6 +13,10 @@ from vectorstore.store import FaissStore
 from vectorstore.retriever import search as vector_search
 from genai.qa import answer as genai_ask
 from genai.summarizer import summarize_document
+from agent.workflow import run_research
+import json
+import os
+import glob
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
 from rich.markdown import Markdown
 
@@ -367,6 +371,49 @@ def summarize(doc_id: str = typer.Argument(..., help="The UUID of the document t
             raise typer.Exit(code=1)
             
     console.print(Panel(Markdown(summary.full_summary), title=f"Summary: {summary.source_file}", border_style="blue"))
+
+@app.command()
+def research(
+    question: str = typer.Argument(..., help="The high-level research question"),
+    min_confidence: float = typer.Option(0.3, "--min-confidence", help="Minimum confidence threshold for findings")
+):
+    """Runs the autonomous research agent workflow."""
+    try:
+        report = run_research(question, vstore, min_confidence=min_confidence)
+    except Exception as e:
+        console.print(f"[bold red]Workflow failed:[/] {str(e)}")
+        raise typer.Exit(code=1)
+        
+    console.print(Panel(Markdown(report.final_report), title="Research Report", border_style="magenta"))
+
+@app.command()
+def reports():
+    """Lists all previously saved research reports."""
+    reports_dir = "data/reports"
+    if not os.path.exists(reports_dir):
+        console.print("[yellow]No reports directory found.[/]")
+        return
+        
+    report_files = glob.glob(os.path.join(reports_dir, "*_report.json"))
+    if not report_files:
+        console.print("[yellow]No saved reports found.[/]")
+        return
+        
+    table = Table(title="Saved Research Reports")
+    table.add_column("Filename", style="cyan")
+    table.add_column("Question", style="green")
+    
+    for filepath in sorted(report_files, reverse=True):
+        filename = os.path.basename(filepath)
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            question = data.get("research_question", "Unknown")
+        except:
+            question = "Error reading file"
+        table.add_row(filename, question)
+        
+    console.print(table)
 
 if __name__ == "__main__":
     app()
