@@ -21,15 +21,42 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         return super().default(o)
 
-def run_research(question: str, store: FaissStore, min_confidence: float = 0.3) -> ResearchReport:
+def run_research(question: str, store: FaissStore, min_confidence: float = 0.3, report_id: str = None) -> ResearchReport:
     """
     Orchestrates the full research pipeline.
     """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if report_id is None:
+        report_id = f"{timestamp}_report"
+        
+    reports_dir = "data/reports"
+    os.makedirs(reports_dir, exist_ok=True)
+    filepath = os.path.join(reports_dir, f"{report_id}.json")
+    
+    report = ResearchReport(
+        research_question=question,
+        sub_questions=[],
+        findings=[],
+        final_report=None,
+        created_at=datetime.now(timezone.utc).isoformat(),
+        status="running"
+    )
+    
+    def flush_state():
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(report, f, cls=EnhancedJSONEncoder, indent=2)
+
+    flush_state()
+
     console.print("[bold cyan]Step 1: Planning...[/]")
     try:
         sub_questions = plan(question)
+        report.sub_questions = sub_questions
+        flush_state()
     except Exception as e:
         console.print(f"[bold red]Planning failed:[/] {str(e)}")
+        report.status = "failed"
+        flush_state()
         raise
 
     findings = []
@@ -40,20 +67,29 @@ def run_research(question: str, store: FaissStore, min_confidence: float = 0.3) 
         try:
             finding = research_subquestion(sq, store=store, top_k=5)
             findings.append(finding)
+            report.findings = findings
+            flush_state()
         except Exception as e:
             console.print(f"  [red]Failed to research sub-question {i+1}:[/] {str(e)}")
             sq.status = "failed"
+            flush_state()
             continue
 
     console.print("[bold cyan]Step 3: Analyzing evidence...[/]")
     cleaned_findings = analyze_findings(findings, min_confidence=min_confidence)
+    report.findings = cleaned_findings
+    flush_state()
     console.print(f"  [green]Retained {len(cleaned_findings)} high-quality findings.[/]")
 
     console.print("[bold cyan]Step 4: Synthesizing report...[/]")
     try:
         final_report = synthesize(question, cleaned_findings)
+        report.final_report = final_report
+        flush_state()
     except Exception as e:
         console.print(f"[bold red]Synthesis failed:[/] {str(e)}")
+        report.status = "failed"
+        flush_state()
         raise
 
     console.print("[bold cyan]Step 5: Grounding evidence...[/]")
@@ -64,33 +100,28 @@ def run_research(question: str, store: FaissStore, min_confidence: float = 0.3) 
         grounded_md = render(linked_report)
         
         # Override the final report with the grounded version
-        final_report = grounded_md
+        report.final_report = grounded_md
+        report.linked_report = linked_report
+        report.faithfulness_score = faith
+        report.coverage_score = cov
         console.print(f"  [green]Grounding complete. Faithfulness: {faith:.2f} | Coverage: {cov:.2f}[/]")
     except Exception as e:
         console.print(f"  [yellow]Grounding failed, falling back to ungrounded report:[/] {str(e)}")
-        linked_report = None
-        faith = 0.0
-        cov = 0.0
 
-    report = ResearchReport(
-        research_question=question,
-        sub_questions=sub_questions,
-        findings=cleaned_findings,
-        final_report=final_report,
-        created_at=datetime.now(timezone.utc).isoformat(),
-        linked_report=linked_report,
-        faithfulness_score=faith,
-        coverage_score=cov
-    )
+    console.print("[bold cyan]Step 6: Running evaluation metrics...[/]")
+    try:
+        from evaluation.evaluator import evaluate
+        from evaluation.tracker import append_eval
+        
+        eval_result = evaluate(report, report_id=report_id)
+        report.eval_result = eval_result
+        append_eval(eval_result)
+        console.print(f"  [green]Evaluation complete. Overall score: {eval_result.overall_score:.2f}[/]")
+    except Exception as e:
+        console.print(f"  [yellow]Evaluation failed:[/] {str(e)}")
 
-    # Save to JSON
-    reports_dir = "data/reports"
-    os.makedirs(reports_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = os.path.join(reports_dir, f"{timestamp}_report.json")
-    
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(report, f, cls=EnhancedJSONEncoder, indent=2)
+    report.status = "complete"
+    flush_state()
         
     console.print(f"[bold green]Report saved to:[/] {filepath}")
     

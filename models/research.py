@@ -36,6 +36,17 @@ class Finding:
     confidence_score: float
 
 @dataclass
+class EvalResult:
+    report_id: str
+    question: str
+    faithfulness: float
+    answer_relevance: float
+    context_precision: float
+    hallucination_risk: float
+    overall_score: float
+    created_at: str
+
+@dataclass
 class ResearchReport:
     research_question: str
     sub_questions: List[SubQuestion]
@@ -45,3 +56,5 @@ class ResearchReport:
     linked_report: Optional[LinkedAnswer] = None
     faithfulness_score: float = 0.0
     coverage_score: float = 0.0
+    status: str = "running"
+    eval_result: Optional[EvalResult] = None
