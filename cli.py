@@ -429,5 +429,54 @@ def reports():
         
     console.print(table)
 
+@app.command()
+def stats():
+    """Displays overall statistics of the document store."""
+    docs = store.list_all()
+    if not docs:
+        console.print("[bold yellow]No documents in store.[/]")
+        return
+        
+    total_docs = len(docs)
+    total_size = sum(doc.file_size_bytes for doc in docs)
+    total_pages = sum(doc.page_count for doc in docs if doc.page_count)
+    
+    total_chunks = 0
+    for doc in docs:
+        total_chunks += store.get_chunk_count(doc.id)
+        
+    table = Table(title="Document Store Statistics")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="magenta")
+    
+    table.add_row("Total Documents", str(total_docs))
+    table.add_row("Total Size (Bytes)", f"{total_size:,}")
+    table.add_row("Total Pages", str(total_pages))
+    table.add_row("Total Chunks", str(total_chunks))
+    
+    console.print(table)
+
+@app.command()
+def clear(force: bool = typer.Option(False, "--force", "-f", help="Force deletion without prompting")):
+    """Clears all documents from the document store and vector store."""
+    if not force:
+        confirm = typer.confirm("Are you sure you want to delete ALL documents? This cannot be undone.")
+        if not confirm:
+            console.print("Aborted.")
+            return
+            
+    docs = store.list_all()
+    if not docs:
+        console.print("[bold yellow]No documents to clear.[/]")
+        return
+        
+    count = 0
+    for doc in docs:
+        if store.delete(doc.id):
+            vstore.remove_document(doc.id)
+            count += 1
+            
+    console.print(f"[bold green]Success:[/] Cleared {count} documents from the store.")
+
 if __name__ == "__main__":
     app()
