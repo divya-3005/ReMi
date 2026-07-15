@@ -15,7 +15,7 @@ def temp_store(tmp_path):
 def mock_embedder(monkeypatch):
     import numpy as np
     def mock_embed_texts(texts):
-        out = np.zeros((len(texts), 768), dtype=np.float32)
+        out = np.zeros((len(texts), 3072), dtype=np.float32)
         for i, t in enumerate(texts):
             if "dogs" in t.lower() or "puppies" in t.lower():
                 out[i, 0] = 1.0
@@ -26,7 +26,7 @@ def mock_embedder(monkeypatch):
         return out
 
     def mock_embed_query(query):
-        out = np.zeros((1, 768), dtype=np.float32)
+        out = np.zeros((1, 3072), dtype=np.float32)
         if "dogs" in query.lower() or "puppies" in query.lower():
             out[0, 0] = 1.0
         elif "weather" in query.lower() or "sunny" in query.lower():
@@ -35,8 +35,16 @@ def mock_embedder(monkeypatch):
             out[0, 2] = 1.0
         return out
 
+    def mock_local_embed_texts(texts):
+        return np.zeros((len(texts), 384), dtype=np.float32)
+
+    def mock_local_embed_query(query):
+        return np.zeros((1, 384), dtype=np.float32)
+
     monkeypatch.setattr("vectorstore.store.embed_texts", mock_embed_texts)
+    monkeypatch.setattr("vectorstore.store.local_embed_texts", mock_local_embed_texts)
     monkeypatch.setattr("vectorstore.retriever.embed_query", mock_embed_query)
+    monkeypatch.setattr("vectorstore.retriever.local_embed_query", mock_local_embed_query)
 
 def test_embed_and_search(temp_store):
     doc_id = "test-doc-1"

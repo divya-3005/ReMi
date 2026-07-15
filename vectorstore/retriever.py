@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 from vectorstore.store import FaissStore
-from vectorstore.embedder import embed_query
+from vectorstore.embedder import embed_query, local_embed_query, EmbeddingRateLimitError
 
 @dataclass
 class SearchResult:
@@ -15,24 +15,37 @@ class SearchResult:
 def search(query: str, store: FaissStore, top_k: int = 5, doc_id: Optional[str] = None, cross_doc: bool = True) -> List[SearchResult]:
     """
     Searches the vector store for the most relevant chunks using Hybrid Search (FAISS + BM25) and Reciprocal Rank Fusion.
+    Gracefully handles dual FAISS indexes (Gemini + Local).
     """
     if store.total_chunks() == 0:
         import warnings
         warnings.warn("Vector store is empty.")
         return []
         
-    # Embed query for dense search
-    query_emb = embed_query(query)
-    
-    # We query more than top_k because we might filter by doc_id or deduplicate
     search_k = min(store.total_chunks(), max(top_k * 10, 50))
-    
-    # 1. FAISS Search (Dense)
-    faiss_scores, faiss_indices = store.index.search(query_emb, search_k)
     faiss_ranks = {}
-    for rank, idx in enumerate(faiss_indices[0]):
-        if idx != -1:
-            faiss_ranks[idx] = rank + 1
+    
+    # 1a. FAISS Search (Primary - Gemini)
+    if store.index_primary.ntotal > 0:
+        try:
+            query_emb_primary = embed_query(query)
+            faiss_scores, faiss_indices = store.index_primary.search(query_emb_primary, search_k)
+            for rank, faiss_idx in enumerate(faiss_indices[0]):
+                if faiss_idx != -1:
+                    global_idx = store.primary_meta_idx[faiss_idx]
+                    faiss_ranks[global_idx] = rank + 1
+        except EmbeddingRateLimitError:
+            # If rate limited, just skip the primary index for this query
+            pass
+
+    # 1b. FAISS Search (Fallback - Local)
+    if store.index_fallback.ntotal > 0:
+        query_emb_fallback = local_embed_query(query)
+        faiss_scores, faiss_indices = store.index_fallback.search(query_emb_fallback, search_k)
+        for rank, faiss_idx in enumerate(faiss_indices[0]):
+            if faiss_idx != -1:
+                global_idx = store.fallback_meta_idx[faiss_idx]
+                faiss_ranks[global_idx] = rank + 1
 
     # 2. BM25 Search (Sparse)
     bm25_ranks = {}

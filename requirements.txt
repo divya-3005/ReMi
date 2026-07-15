@@ -17,14 +17,18 @@ spacy>=3.7.0
 networkx>=3.0
 numpy>=1.24.0
 faiss-cpu>=1.7.0
+sentence-transformers>=2.2.0
 
 # LLM providers
 groq>=0.9.0
-google-generativeai>=0.4.0
+google-generativeai>=0.5.2
 
 # Utilities
 python-dotenv>=1.0.0
 python-multipart>=0.0.6
+
+# Persistence
+supabase
 
 # Testing
 pytest>=8.0.0
