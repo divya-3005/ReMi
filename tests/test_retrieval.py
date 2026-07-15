@@ -11,6 +11,33 @@ def temp_store(tmp_path):
     store = FaissStore(data_dir=data_dir)
     yield store
 
+@pytest.fixture(autouse=True)
+def mock_embedder(monkeypatch):
+    import numpy as np
+    def mock_embed_texts(texts):
+        out = np.zeros((len(texts), 768), dtype=np.float32)
+        for i, t in enumerate(texts):
+            if "dogs" in t.lower() or "puppies" in t.lower():
+                out[i, 0] = 1.0
+            elif "weather" in t.lower() or "sunny" in t.lower():
+                out[i, 1] = 1.0
+            else:
+                out[i, 2] = 1.0
+        return out
+
+    def mock_embed_query(query):
+        out = np.zeros((1, 768), dtype=np.float32)
+        if "dogs" in query.lower() or "puppies" in query.lower():
+            out[0, 0] = 1.0
+        elif "weather" in query.lower() or "sunny" in query.lower():
+            out[0, 1] = 1.0
+        else:
+            out[0, 2] = 1.0
+        return out
+
+    monkeypatch.setattr("vectorstore.store.embed_texts", mock_embed_texts)
+    monkeypatch.setattr("vectorstore.retriever.embed_query", mock_embed_query)
+
 def test_embed_and_search(temp_store):
     doc_id = "test-doc-1"
     chunks = [

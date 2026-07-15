@@ -29,7 +29,7 @@ Unlike simple chat wrappers that hallucinate answers, ResearchMind explicitly gr
 - **Advanced RAG Capabilities**: Features *Semantic Chunking* (recursive text splitting) to preserve paragraph context, *Parallel Execution* for massive speedups, and *Query Expansion (HyDE)* to maximize retrieval accuracy.
 - **Strict Evidence Grounding**: A custom NLP layer enforces that every sentence in the final report has a verifiable citation back to your uploaded PDF/TXT files.
 - **Automated RAG Evaluation**: Every research run generates quality scores for **Faithfulness**, **Answer Relevance**, **Context Precision**, and **Hallucination Risk**.
-- **Lightning Fast & Memory Efficient**: Uses ONNX-backed `fastembed` (no PyTorch bloat) to run complex semantic vector searches entirely within 512MB RAM constraints.
+- **Lightning Fast & Memory Efficient**: By offloading embeddings to the external **Google Gemini API**, ReMi runs complex semantic vector searches locally via FAISS entirely within 512MB RAM constraints, guaranteeing 100% uptime on free tiers.
 - **Beautiful UI**: A responsive React/Vite frontend with dynamic toast notifications, real-time polling, and detailed metric dashboards.
 
 ---
@@ -79,7 +79,7 @@ flowchart TD
     subgraph Multi-Agent Research Workflow
         Planner -->|Decomposes Query| SubQs[Sub-Questions]
         SubQs --> Researcher[Researcher Agents]
-        Researcher -->|Search FAISS Index| VectorStore[(FAISS + fastembed)]
+        Researcher -->|Search FAISS Index| VectorStore[(FAISS + Gemini API)]
         VectorStore -->|Return Chunks| Analyzer[Analyzer Agent]
         Analyzer -->|Filter & Rank| Synthesizer[Synthesizer Agent]
     end
@@ -98,7 +98,7 @@ flowchart TD
 ResearchMind is designed to be easily deployed for free to showcase in portfolios.
 
 ### 1. Backend (Render.com - Free Tier)
-Deploy the root folder as a Docker Web Service on Render. Because it uses lightweight `fastembed`, it fits comfortably within Render's 512MB free RAM limit. 
+Deploy the root folder as a Docker Web Service on Render. Because we offloaded heavy Machine Learning embeddings to the external Google Gemini API, it fits comfortably within Render's 512MB free RAM limit and never crashes.
 *Note: Render's free tier is ephemeral, meaning uploaded documents reset when the server sleeps. This creates a perfect, clean-slate demo environment for recruiters!*
 
 ### 2. Frontend (Vercel - Free Tier)
