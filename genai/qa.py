@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 from vectorstore.store import FaissStore
 from vectorstore.retriever import search, SearchResult
-from genai.prompts import QA_SYSTEM
+from genai.prompts import QA_SYSTEM, EXPANSION_SYSTEM
 from genai.client import complete
 
 @dataclass
@@ -17,7 +17,14 @@ def answer(query: str, store: FaissStore, top_k: int = 5, doc_id: Optional[str] 
     """
     Retrieves relevant chunks and generates an answer grounded in the context.
     """
-    results = search(query, store, top_k=top_k, doc_id=doc_id)
+    # Query Expansion: Generate keywords to improve semantic retrieval
+    try:
+        expanded_keywords = complete(system=EXPANSION_SYSTEM, user=query, max_tokens=50)
+        search_query = f"{query} {expanded_keywords}"
+    except Exception:
+        search_query = query
+        
+    results = search(search_query, store, top_k=top_k, doc_id=doc_id)
     
     if not results:
         return QAResult(

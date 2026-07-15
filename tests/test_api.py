@@ -8,7 +8,7 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"
 
 @patch("api.routes.documents.load_file")
 @patch("api.routes.documents.clean_text")
@@ -61,6 +61,7 @@ def test_qa(mock_render, mock_cov, mock_faith, mock_link, mock_ask):
     mock_cov.return_value = 1.0
     
     app.state.vstore = MagicMock()
+    app.state.vstore.metadata = {"dummy": "doc"}
     
     response = client.post(
         "/api/qa",

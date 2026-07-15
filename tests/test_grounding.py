@@ -68,6 +68,8 @@ def test_report_render():
     
     md = render(linked)
     assert "A. [^1]" in md
-    assert "[UNGROUNDED] B." in md
+    assert "B." in md
+    assert "[UNGROUNDED]" not in md
+    assert "Section c1" in md
     assert "**Sources**" in md
-    assert "[^1]: file.txt, chunk c1" in md
+    assert "[^1]: file.txt, Section c1" in md

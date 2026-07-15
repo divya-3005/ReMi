@@ -60,20 +60,33 @@ def run_research(question: str, store: FaissStore, min_confidence: float = 0.3, 
         raise
 
     findings = []
+    import concurrent.futures
     
-    console.print(f"[bold cyan]Step 2: Researching {len(sub_questions)} sub-questions...[/]")
-    for i, sq in enumerate(sub_questions):
-        console.print(f"  [yellow]Researching sub-question {i+1}/{len(sub_questions)}:[/] {sq.question}")
-        try:
-            finding = research_subquestion(sq, store=store, top_k=5)
-            findings.append(finding)
-            report.findings = findings
-            flush_state()
-        except Exception as e:
-            console.print(f"  [red]Failed to research sub-question {i+1}:[/] {str(e)}")
-            sq.status = "failed"
-            flush_state()
-            continue
+    console.print(f"[bold cyan]Step 2: Researching {len(sub_questions)} sub-questions in parallel...[/]")
+    
+    # Mark all as running initially
+    for sq in sub_questions:
+        sq.status = "running"
+    flush_state()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_idx = {
+            executor.submit(research_subquestion, sq, store, 5): (i, sq)
+            for i, sq in enumerate(sub_questions)
+        }
+        
+        for future in concurrent.futures.as_completed(future_to_idx):
+            i, sq = future_to_idx[future]
+            try:
+                finding = future.result()
+                findings.append(finding)
+                report.findings = findings
+                console.print(f"  [green]Completed sub-question {i+1}:[/] {sq.question}")
+                flush_state()
+            except Exception as e:
+                console.print(f"  [red]Failed to research sub-question {i+1}:[/] {str(e)}")
+                sq.status = "failed"
+                flush_state()
 
     console.print("[bold cyan]Step 3: Analyzing evidence...[/]")
     cleaned_findings = analyze_findings(findings, min_confidence=min_confidence)

@@ -29,3 +29,8 @@ Format your output exactly with these markdown sections:
 # Important Dates
 (Any critical dates or timelines mentioned, if none, state "No dates mentioned")
 """
+
+EXPANSION_SYSTEM = """You are an expert search query generator.
+Given a user's question, generate a search string containing highly relevant keywords, synonyms, and related terms that would be most likely to find the answer in a semantic vector database.
+Output ONLY the keywords separated by spaces. Do not write full sentences or include the original words.
+"""
