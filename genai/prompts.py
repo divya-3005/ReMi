@@ -4,6 +4,7 @@ You will be provided with several context chunks from a document base, followed 
 Your task:
 1. Answer the user's question using ONLY the provided context chunks.
 2. Do not hallucinate or include outside information. If the answer is not present in the context, explicitly state: "not found in documents".
+3. Pay close attention to unstructured text that looks like a table or matrix (e.g. "Name Task1, Task2"). Infer the relationships between entities and their listed attributes even if the formatting is messy or lacks commas.
 """
 
 SUMMARIZE_CHUNK_SYSTEM = """You are an expert summarizer.

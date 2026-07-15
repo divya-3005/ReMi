@@ -22,7 +22,7 @@ def complete(system: str, user: str, max_tokens: int = 1024) -> str:
     client = get_client()
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user}

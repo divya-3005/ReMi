@@ -103,12 +103,14 @@ def chunk_document(
         page_idx = bisect.bisect_right(page_starts, start_char)
         page_number = page_idx if page_idx <= len(page_starts) else len(page_starts)
 
-        token_count = splitter._length(text_chunk)
+        header = " ".join(cleaned_text[:150].strip().split())
+        enriched_content = f"[Document Context: {source_file} - {header}]\n{text_chunk}"
+        token_count = splitter._length(enriched_content)
 
         chunk_obj = Chunk(
             chunk_id=str(uuid.uuid4()),
             document_id=document_id,
-            content=text_chunk,
+            content=enriched_content,
             source_file=source_file,
             page_number=page_number,
             char_offset=start_char,

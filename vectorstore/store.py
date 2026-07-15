@@ -87,7 +87,7 @@ class FaissStore:
                 "chunk_id": chunk.chunk_id,
                 "doc_id": doc_id,
                 "source_file": source_file,
-                "chunk_text": chunk.content[:500],  # Increased to 500 chars for context
+                "chunk_text": chunk.content,  # Removed 500 char truncation to allow full chunk context
                 "token_count": chunk.token_count,
                 "chunk_index": getattr(chunk, 'chunk_index', 0)
             })
