@@ -144,8 +144,8 @@ function AppContent() {
       {/* Sidebar */}
       <div className="w-72 border-r border-white/5 flex flex-col bg-slate-950/20 backdrop-blur-md">
         <div className="p-6 border-b border-white/5">
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Microscope className="w-6 h-6 text-emerald-500" />
+          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+            <img src="/logo.png" alt="ResearchMind Logo" className="w-8 h-8 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
             Research<span className="text-emerald-500">Mind</span>
           </h1>
           <p className="text-[11px] text-slate-500 mt-1.5">AI-Powered Document Research</p>
