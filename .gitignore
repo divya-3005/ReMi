@@ -8,14 +8,28 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+*.egg-info/
 
 # Local databases and FAISS indices
 data/
+storage/
 store.json
 documents.json
 faiss.index
 faiss_meta.json
 sample_doc.txt
 
-# OS generated files
+# Frontend
+node_modules/
+dist/
+.cache/
+
+# IDE & OS
 .DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Agents
+.agents/

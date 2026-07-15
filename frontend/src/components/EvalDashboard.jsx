@@ -1,5 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { HelpCircle } from 'lucide-react';
+
+const SCORE_TOOLTIPS = {
+  'Faithfulness': 'Did the AI stick to facts from your documents?',
+  'Answer Relevance': 'Did the answer actually address your question?',
+  'Context Precision': 'Were the right parts of documents found?',
+  'Hallucination Risk': 'Did the AI make anything up? (Lower is better)'
+}
 
 const MetricBar = ({ label, value, delay }) => {
   const percentage = Math.round(value * 100);
@@ -29,12 +37,25 @@ const MetricBar = ({ label, value, delay }) => {
     }
   }
 
+  const tooltip = SCORE_TOOLTIPS[label];
+
   return (
-    <div className="mb-5">
+    <div className="mb-5 relative group">
       <div className="flex justify-between mb-2">
-        <span className="text-sm font-medium text-slate-300">{label}</span>
+        <span className="text-sm font-medium text-slate-300 flex items-center gap-1.5 cursor-help">
+          {label}
+          {tooltip && <HelpCircle className="w-3 h-3 text-slate-500" />}
+        </span>
         <span className="text-sm font-mono font-medium text-slate-300">{percentage}%</span>
       </div>
+      
+      {/* Tooltip */}
+      {tooltip && (
+        <div className="absolute bottom-full left-0 mb-1 bg-slate-800 border border-white/10 rounded-lg p-2 text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-64 shadow-xl">
+          {tooltip}
+        </div>
+      )}
+
       <div className={`w-full rounded-full h-2 ${trackClass} overflow-hidden`}>
         <motion.div 
           initial={{ width: 0 }}
@@ -63,7 +84,15 @@ export default function EvalDashboard({ evalResult }) {
         
         <div className="col-span-1 glass-card p-6 flex flex-col items-center justify-center relative overflow-hidden shadow-lg group">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-4 z-10">Overall Quality</h3>
+          <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-4 z-10 flex items-center gap-1.5 cursor-help">
+            Overall Quality
+            <HelpCircle className="w-3 h-3" />
+          </h3>
+          
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 bg-slate-800 border border-white/10 rounded-lg p-2 text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl text-center">
+            Combined quality score across all metrics.
+          </div>
+
           <div className="relative w-36 h-36 flex items-center justify-center rounded-full bg-[#080c14] border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] z-10">
             <svg className="absolute inset-0 w-full h-full transform -rotate-90">
               <circle cx="72" cy="72" r="68" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-slate-800" />

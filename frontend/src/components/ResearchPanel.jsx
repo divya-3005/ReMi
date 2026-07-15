@@ -3,14 +3,23 @@ import axios from 'axios'
 import ReactMarkdown from 'react-markdown'
 import EvalDashboard from './EvalDashboard'
 import { motion } from 'framer-motion'
-import { BrainCircuit, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { BrainCircuit, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { ScoreBadge } from './AskPanel'
+import { useToast } from '../contexts/ToastContext'
+
+const EXAMPLE_QUESTIONS = [
+  'What is the comprehensive overview of the main topic?',
+  'Compare and contrast the different approaches mentioned.',
+  'What is the detailed timeline of events?',
+]
 
 export default function ResearchPanel() {
   const [question, setQuestion] = useState('')
   const [reportId, setReportId] = useState(null)
   const [reportData, setReportData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const toast = useToast()
 
   // Polling effect
   useEffect(() => {
@@ -28,34 +37,73 @@ export default function ResearchPanel() {
     return () => clearInterval(interval)
   }, [reportId, reportData])
 
-  const handleResearch = async (e) => {
-    e.preventDefault()
-    if (!question.trim()) return
+  // Timer effect
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setInterval(() => {
+        setElapsed(prev => prev + 1)
+      }, 1000)
+    } else {
+      setElapsed(0)
+    }
+    return () => clearInterval(timer)
+  }, [loading])
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const handleResearch = async (searchQuestion) => {
+    const q = searchQuestion || question
+    if (!q.trim()) return
 
     setLoading(true)
     setReportId(null)
     setReportData(null)
+    setElapsed(0)
     try {
-      const res = await axios.post('/api/research', { question, min_confidence: 0.3 })
+      const res = await axios.post('/api/research', { question: q, min_confidence: 0.3 })
       setReportId(res.data.report_id)
     } catch (err) {
-      console.error(err)
+      const detail = err.response?.data?.detail || err.message
+      toast.error(`Failed to start research: ${detail}`)
       setLoading(false)
     }
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    handleResearch()
+  }
+
+  const handleExampleClick = (q) => {
+    setQuestion(q)
+    handleResearch(q)
   }
 
   // Determine if we're done generating
   useEffect(() => {
     if (reportData && (reportData.status === 'complete' || reportData.status === 'failed')) {
       setLoading(false)
+      if (reportData.status === 'failed') {
+        toast.error('Research task failed. Please try again.')
+      } else {
+        toast.success('Research report completed!')
+      }
     }
-  }, [reportData])
+  }, [reportData, toast])
 
   return (
     <div className="space-y-8 flex flex-col h-full">
-      <h2 className="text-xl font-semibold text-white">Autonomous Agent Research</h2>
+      <div>
+        <h2 className="text-xl font-semibold text-white">Deep Research</h2>
+        <p className="text-sm text-slate-500 mt-1">Ask a complex question and our AI will research it thoroughly, piece by piece, and write a cited report.</p>
+      </div>
 
-      <form onSubmit={handleResearch} className="flex gap-3 shrink-0">
+      <form onSubmit={handleSubmit} className="flex gap-3 shrink-0">
         <input
           type="text"
           value={question}
@@ -73,7 +121,7 @@ export default function ResearchPanel() {
           ) : (
             <>
               <BrainCircuit className="w-5 h-5" />
-              <span>Run Agent</span>
+              <span>Run Research</span>
             </>
           )}
         </button>
@@ -85,9 +133,20 @@ export default function ResearchPanel() {
             <BrainCircuit className="w-8 h-8" />
           </div>
           <h3 className="text-slate-300 font-medium mb-2 text-lg">Multi-Agent Workflow</h3>
-          <p className="text-slate-500 text-sm max-w-md">
-            The AI Planner will decompose your question into sub-tasks, assign Researchers to each, and Synthesize a rigorously cited report.
+          <p className="text-slate-500 text-sm max-w-md mb-6">
+            Unlike simple Q&A, Deep Research breaks your question down into smaller parts, researches each part separately across all your documents, and synthesizes a comprehensive final report.
           </p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {EXAMPLE_QUESTIONS.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => handleExampleClick(q)}
+                className="px-3.5 py-2 rounded-lg bg-slate-800/50 text-slate-400 text-xs font-medium hover:bg-slate-700/50 hover:text-slate-200 transition-colors border border-white/5"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -97,16 +156,25 @@ export default function ResearchPanel() {
           {/* Sub-questions Timeline */}
           <div className="glass-card p-6 shrink-0 shadow-lg">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold">Research Plan Execution</h3>
-              <div className="flex items-center gap-2 text-xs font-mono font-medium">
-                <span className="text-slate-500">Status:</span>
-                <span className={`px-2 py-0.5 rounded ${
-                  reportData.status === 'running' ? 'bg-amber-500/10 text-amber-400' : 
-                  reportData.status === 'complete' ? 'bg-emerald-500/10 text-emerald-400' : 
-                  'bg-red-500/10 text-red-400'
-                }`}>
-                  {reportData.status.toUpperCase()}
-                </span>
+              <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold">Research Progress</h3>
+              <div className="flex items-center gap-4">
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{formatTime(elapsed)}</span>
+                    <span className="text-slate-600">/ ~1:00</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-xs font-mono font-medium">
+                  <span className="text-slate-500">Status:</span>
+                  <span className={`px-2 py-0.5 rounded ${
+                    reportData.status === 'running' ? 'bg-amber-500/10 text-amber-400' : 
+                    reportData.status === 'complete' ? 'bg-emerald-500/10 text-emerald-400' : 
+                    'bg-red-500/10 text-red-400'
+                  }`}>
+                    {reportData.status.toUpperCase()}
+                  </span>
+                </div>
               </div>
             </div>
             
@@ -157,7 +225,7 @@ export default function ResearchPanel() {
             ) : (
               <div className="flex items-center gap-3 text-slate-500 text-sm italic py-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Planning sub-questions...
+                Planning research strategy...
               </div>
             )}
           </div>
@@ -169,7 +237,7 @@ export default function ResearchPanel() {
               animate={{ opacity: 1, y: 0 }}
               className="flex-1 overflow-y-auto glass-card p-8 shadow-xl relative"
             >
-              <div className="flex gap-3 mb-8 pb-6 border-b border-white/5 sticky top-0 bg-[#161b27]/80 backdrop-blur-md z-10 pt-2 -mt-2">
+              <div className="flex gap-3 mb-8 pb-6 border-b border-white/5 sticky top-0 bg-[#161b27]/90 backdrop-blur-md z-10 pt-2 -mt-2">
                 <ScoreBadge label="Faithfulness" score={reportData.faithfulness_score} />
                 <ScoreBadge label="Coverage" score={reportData.coverage_score} />
               </div>

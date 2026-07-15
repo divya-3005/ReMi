@@ -19,15 +19,47 @@ from grounding.scorer import faithfulness_score, coverage_score
 from grounding.report import render
 from models.research import Finding
 import json
-import os
 import glob
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
 from rich.markdown import Markdown
 
-app = typer.Typer(help="ResearchMind Ingestion Pipeline CLI")
+__version__ = "1.0.0"
+
+app = typer.Typer(help="ResearchMind Pipeline CLI")
 console = Console()
 store = DocumentStore()
 vstore = FaissStore()
+
+def version_callback(value: bool):
+    if value:
+        console.print(f"ResearchMind CLI Version: [bold cyan]{__version__}[/]")
+        raise typer.Exit()
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Print version and exit",
+    )
+):
+    """
+    ResearchMind CLI: Manage documents, run vector searches, and trigger AI research natively from the terminal.
+    """
+    pass
+
+@app.command()
+def serve(
+    host: str = typer.Option("0.0.0.0", help="Host IP to bind to"),
+    port: int = typer.Option(8000, help="Port to bind to")
+):
+    """Starts the FastAPI backend server."""
+    import uvicorn
+    console.print(f"[bold green]Starting backend on {host}:{port}[/]")
+    uvicorn.run("api.main:app", host=host, port=port, reload=True)
 
 @app.command()
 def ingest(path: str = typer.Argument(..., help="Path to a PDF/TXT file or folder containing them")):
@@ -252,21 +284,6 @@ def index(doc_id: str = typer.Argument(..., help="The UUID of the document to in
         raise typer.Exit(code=1)
         
     doc, chunks = res
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeRemainingColumn(),
-        console=console
-    ) as progress:
-        task = progress.add_task(f"Indexing document {doc_id}...", total=len(chunks))
-        
-        # We can just add all chunks at once, embedder handles batching
-        # But progress bar is nicer if we add them in one go anyway, since embed_texts handles the batch
-        # To show real progress we could chunk the chunks, but for now we just show a spinner-like progress
-        # Since add_document does it all at once, we'll just step the progress bar to 100% after
-        
     with console.status(f"[bold green]Embedding and indexing {len(chunks)} chunks...[/]"):
         vstore.add_document(doc_id, chunks, doc.filename)
         

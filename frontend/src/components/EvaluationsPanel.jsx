@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Activity, RefreshCw } from 'lucide-react';
+import { Activity, RefreshCw, HelpCircle } from 'lucide-react';
+
+const SCORE_TOOLTIPS = {
+  Faithfulness: 'Did the AI stick to facts from your documents?',
+  Relevance: 'Did the answer actually address your question?',
+  Precision: 'Were the right parts of documents found?',
+  Hallucination: 'Did the AI make anything up? (Lower is better)',
+  Overall: 'Combined quality score of the answer'
+}
 
 export default function EvaluationsPanel() {
   const [evals, setEvals] = useState([]);
@@ -61,7 +69,10 @@ export default function EvaluationsPanel() {
   return (
     <div className="space-y-8 h-full flex flex-col">
       <div className="flex justify-between items-center shrink-0">
-        <h2 className="text-xl font-semibold text-white">Evaluation History</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-white">Quality Scores</h2>
+          <p className="text-sm text-slate-500 mt-1">Track the reliability and accuracy of AI-generated answers over time.</p>
+        </div>
         <button 
           onClick={fetchEvals} 
           disabled={loading}
@@ -75,14 +86,23 @@ export default function EvaluationsPanel() {
       {summary && summary.averages && (
         <div className="grid grid-cols-5 gap-4 shrink-0">
           {[
-            { label: 'Avg Faithfulness', val: summary.averages.faithfulness },
-            { label: 'Avg Relevance', val: summary.averages.answer_relevance },
-            { label: 'Avg Precision', val: summary.averages.context_precision },
-            { label: 'Avg Hallucination', val: summary.averages.hallucination_risk, reverse: true },
-            { label: 'Overall Quality', val: summary.averages.overall_score }
+            { label: 'Avg Faithfulness', val: summary.averages.faithfulness, key: 'Faithfulness' },
+            { label: 'Avg Relevance', val: summary.averages.answer_relevance, key: 'Relevance' },
+            { label: 'Avg Precision', val: summary.averages.context_precision, key: 'Precision' },
+            { label: 'Avg Hallucination', val: summary.averages.hallucination_risk, reverse: true, key: 'Hallucination' },
+            { label: 'Overall Quality', val: summary.averages.overall_score, key: 'Overall' }
           ].map((s, i) => (
-            <div key={i} className="glass-card p-5 text-center shadow-lg">
-              <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">{s.label}</div>
+            <div key={i} className="glass-card p-5 text-center shadow-lg relative group">
+              <div className="flex items-center justify-center gap-1.5 mb-2 cursor-help">
+                <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{s.label}</div>
+                <HelpCircle className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+              </div>
+              
+              {/* Tooltip */}
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 bg-slate-800 border border-white/10 rounded-lg p-2 text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
+                {SCORE_TOOLTIPS[s.key]}
+              </div>
+
               <div className={`text-3xl font-bold font-mono tracking-tighter ${getColor(s.val, s.reverse)}`}>
                 {formatScore(s.val)}
               </div>
@@ -98,11 +118,51 @@ export default function EvaluationsPanel() {
               <tr>
                 <th className="px-6 py-4 font-semibold">Date</th>
                 <th className="px-6 py-4 font-semibold">Question</th>
-                <th className="px-6 py-4 font-semibold">Faithfulness</th>
-                <th className="px-6 py-4 font-semibold">Relevance</th>
-                <th className="px-6 py-4 font-semibold">Precision</th>
-                <th className="px-6 py-4 font-semibold">Hallucination</th>
-                <th className="px-6 py-4 font-semibold">Overall</th>
+                <th className="px-6 py-4 font-semibold group cursor-help relative">
+                  <div className="flex items-center gap-1.5">
+                    Faithfulness
+                    <HelpCircle className="w-3 h-3 opacity-50" />
+                  </div>
+                  <div className="absolute hidden group-hover:block top-full mt-2 bg-slate-800 text-slate-300 text-xs p-2 rounded border border-white/10 w-48 normal-case font-normal shadow-xl">
+                    {SCORE_TOOLTIPS['Faithfulness']}
+                  </div>
+                </th>
+                <th className="px-6 py-4 font-semibold group cursor-help relative">
+                  <div className="flex items-center gap-1.5">
+                    Relevance
+                    <HelpCircle className="w-3 h-3 opacity-50" />
+                  </div>
+                  <div className="absolute hidden group-hover:block top-full mt-2 bg-slate-800 text-slate-300 text-xs p-2 rounded border border-white/10 w-48 normal-case font-normal shadow-xl">
+                    {SCORE_TOOLTIPS['Relevance']}
+                  </div>
+                </th>
+                <th className="px-6 py-4 font-semibold group cursor-help relative">
+                  <div className="flex items-center gap-1.5">
+                    Precision
+                    <HelpCircle className="w-3 h-3 opacity-50" />
+                  </div>
+                  <div className="absolute hidden group-hover:block top-full mt-2 bg-slate-800 text-slate-300 text-xs p-2 rounded border border-white/10 w-48 normal-case font-normal shadow-xl">
+                    {SCORE_TOOLTIPS['Precision']}
+                  </div>
+                </th>
+                <th className="px-6 py-4 font-semibold group cursor-help relative">
+                  <div className="flex items-center gap-1.5">
+                    Hallucination
+                    <HelpCircle className="w-3 h-3 opacity-50" />
+                  </div>
+                  <div className="absolute hidden group-hover:block top-full mt-2 bg-slate-800 text-slate-300 text-xs p-2 rounded border border-white/10 w-48 normal-case font-normal shadow-xl">
+                    {SCORE_TOOLTIPS['Hallucination']}
+                  </div>
+                </th>
+                <th className="px-6 py-4 font-semibold group cursor-help relative">
+                  <div className="flex items-center gap-1.5">
+                    Overall
+                    <HelpCircle className="w-3 h-3 opacity-50" />
+                  </div>
+                  <div className="absolute hidden group-hover:block top-full mt-2 right-0 bg-slate-800 text-slate-300 text-xs p-2 rounded border border-white/10 w-48 normal-case font-normal shadow-xl">
+                    {SCORE_TOOLTIPS['Overall']}
+                  </div>
+                </th>
               </tr>
             </thead>
             <motion.tbody 
@@ -117,7 +177,7 @@ export default function EvaluationsPanel() {
                     <div className="flex flex-col items-center justify-center text-slate-500">
                       <Activity className="w-12 h-12 mb-4 opacity-50" />
                       <p className="font-medium">No evaluations recorded yet.</p>
-                      <p className="text-xs mt-1">Run a research query first to generate metrics.</p>
+                      <p className="text-xs mt-1">Run a deep research query first to generate quality scores.</p>
                     </div>
                   </td>
                 </tr>
