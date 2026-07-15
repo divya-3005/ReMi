@@ -26,6 +26,7 @@ Unlike simple chat wrappers that hallucinate answers, ResearchMind explicitly gr
 ## ✨ Features
 
 - **Multi-Step Agentic Workflow**: Complex questions are broken down by a *Planner Agent*, investigated by specialized *Researcher Agents*, and filtered by an *Analyzer* before final synthesis.
+- **Advanced RAG Capabilities**: Features *Semantic Chunking* (recursive text splitting) to preserve paragraph context, *Parallel Execution* for massive speedups, and *Query Expansion (HyDE)* to maximize retrieval accuracy.
 - **Strict Evidence Grounding**: A custom NLP layer enforces that every sentence in the final report has a verifiable citation back to your uploaded PDF/TXT files.
 - **Automated RAG Evaluation**: Every research run generates quality scores for **Faithfulness**, **Answer Relevance**, **Context Precision**, and **Hallucination Risk**.
 - **Lightning Fast & Memory Efficient**: Uses ONNX-backed `fastembed` (no PyTorch bloat) to run complex semantic vector searches entirely within 512MB RAM constraints.
