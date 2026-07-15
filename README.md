@@ -1,19 +1,43 @@
-# ResearchMind 🧠
+<div align="center">
+  <img src="frontend/public/logo.png" alt="ResearchMind Logo" width="120"/>
+  <h1>ResearchMind 🧠</h1>
 
-![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
-![React Version](https://img.shields.io/badge/React-19-61dafb)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688)
-![License](https://img.shields.io/badge/license-MIT-green)
+  <p><strong>An autonomous, multi-agent RAG platform that reads your documents, runs deep research workflows, and generates rigorously cited reports.</strong></p>
 
-**ResearchMind (ReMi) is an autonomous, multi-agent RAG system that reads your documents, runs deep research workflows, and generates rigorously cited reports.** 
+  <p>
+    <a href="#-features">Features</a> •
+    <a href="#-quick-start-5-minutes">Quick Start</a> •
+    <a href="#%EF%B8%8F-architecture">Architecture</a> •
+    <a href="#-production-deployment">Deployment</a>
+  </p>
 
-Unlike simple chat wrappers, ResearchMind features a beautiful web interface, explicitly grounds its claims to exact source text (to eliminate hallucinations), and quantitatively evaluates its own performance on every run.
+  <p>
+    <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python Version" />
+    <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React" />
+    <img src="https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
+  </p>
+</div>
+
+---
+
+Unlike simple chat wrappers that hallucinate answers, ResearchMind explicitly grounds every claim it makes to exact character spans in your source text. It evaluates its own performance quantitatively and runs inside a premium, glass-morphism web interface.
+
+## ✨ Features
+
+- **Multi-Step Agentic Workflow**: Complex questions are broken down by a *Planner Agent*, investigated by specialized *Researcher Agents*, and filtered by an *Analyzer* before final synthesis.
+- **Strict Evidence Grounding**: A custom NLP layer enforces that every sentence in the final report has a verifiable citation back to your uploaded PDF/TXT files.
+- **Automated RAG Evaluation**: Every research run generates quality scores for **Faithfulness**, **Answer Relevance**, **Context Precision**, and **Hallucination Risk**.
+- **Lightning Fast & Memory Efficient**: Uses ONNX-backed `fastembed` (no PyTorch bloat) to run complex semantic vector searches entirely within 512MB RAM constraints.
+- **Beautiful UI**: A responsive React/Vite frontend with dynamic toast notifications, real-time polling, and detailed metric dashboards.
+
+---
 
 ## 🚀 Quick Start (5 Minutes)
 
 Assume a fresh machine (MacOS/Linux) with Python 3.11+ and Node.js installed.
 
-1. **Clone & Setup Backend**
+### 1. Setup Backend
 ```bash
 git clone https://github.com/divyasingh1/ReMi.git
 cd ReMi
@@ -23,18 +47,18 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-2. **Configure Environment**
+### 2. Configure Environment
 ```bash
 cp .env.example .env
 # Edit .env and add your GROQ_API_KEY
 ```
 
-3. **Start the App**
+### 3. Start the Platform
 ```bash
-# Start backend on port 8000
+# Start FastAPI backend (Port 8000)
 python cli.py serve &
 
-# Start frontend UI in a new terminal
+# Start React frontend (Port 5173)
 cd frontend
 npm install
 npm run dev
@@ -48,13 +72,13 @@ Navigate to `http://localhost:5173` to view the application!
 
 ```mermaid
 flowchart TD
-    UI[React Frontend UI] -->|User Query| API[FastAPI Backend]
+    UI[React Web App] -->|User Query| API[FastAPI Backend]
     API --> Planner[Planner Agent]
     
     subgraph Multi-Agent Research Workflow
         Planner -->|Decomposes Query| SubQs[Sub-Questions]
         SubQs --> Researcher[Researcher Agents]
-        Researcher -->|Search FAISS Index| VectorStore[(FAISS + NLP Layer)]
+        Researcher -->|Search FAISS Index| VectorStore[(FAISS + fastembed)]
         VectorStore -->|Return Chunks| Analyzer[Analyzer Agent]
         Analyzer -->|Filter & Rank| Synthesizer[Synthesizer Agent]
     end
@@ -66,19 +90,30 @@ flowchart TD
     API --> UI
 ```
 
-## ✨ Features
+---
 
-1. **Beautiful Web Interface:** Upload PDFs, manage documents, search, chat, and trigger autonomous research workflows from a premium, responsive UI.
-2. **Multi-Step Agentic Workflow:** A *Planner* breaks down complex queries, *Researchers* investigate sub-questions, and an *Analyzer* filters out noise before Synthesis.
-3. **Strict Evidence Grounding:** A custom Grounding Layer maps every claim back to exact character spans in the source documents using semantic sliding windows.
-4. **Automated Evaluation:** Every run is scored on Faithfulness, Answer Relevance, Context Precision, and Hallucination Risk.
+## ☁️ Production Deployment
+
+ResearchMind is designed to be easily deployed for free to showcase in portfolios.
+
+### 1. Backend (Render.com - Free Tier)
+Deploy the root folder as a Docker Web Service on Render. Because it uses lightweight `fastembed`, it fits comfortably within Render's 512MB free RAM limit. 
+*Note: Render's free tier is ephemeral, meaning uploaded documents reset when the server sleeps. This creates a perfect, clean-slate demo environment for recruiters!*
+
+### 2. Frontend (Vercel - Free Tier)
+Deploy the `frontend/` folder to Vercel as a Vite project. 
+To securely link it to your backend without exposing the URL in your code:
+- Go to Vercel Project Settings → Environment Variables
+- Add `VITE_API_URL` and set it to your Render URL (e.g., `https://remi-backend-xyz.onrender.com`).
+
+---
 
 ## 💻 CLI Usage
 
-You can also orchestrate the entire pipeline directly from the terminal.
+You can orchestrate the entire pipeline directly from the terminal without the web UI:
 
 ```bash
-# Ingest a PDF or text file
+# Ingest a document into the FAISS vector store
 python cli.py ingest /path/to/document.pdf
 
 # Run a full agentic research query
@@ -88,10 +123,12 @@ python cli.py research "What are the core capabilities of the ingested document?
 python cli.py stats
 ```
 
+---
+
 ## 📊 Evaluation Metrics
 
 ResearchMind doesn't just guess quality; it calculates it:
 - **Faithfulness:** Ratio of generated sentences that map back to a source chunk.
 - **Answer Relevance:** Cosine similarity between query and final report.
 - **Context Precision:** Percentage of retrieved chunks that were actually useful.
-- **Hallucination Risk:** Inverse of faithfulness (1.0 - Faithfulness).
+- **Hallucination Risk:** Inverse of faithfulness (1.0 - Faithfulness, lower is better).
