@@ -405,7 +405,7 @@ def summarize(doc_id: str = typer.Argument(..., help="The UUID of the document t
 @app.command()
 def research(
     question: str = typer.Argument(..., help="The high-level research question"),
-    min_confidence: float = typer.Option(0.3, "--min-confidence", help="Minimum confidence threshold for findings")
+    min_confidence: float = typer.Option(0.01, "--min-confidence", help="Minimum confidence threshold for findings")
 ):
     """Runs the autonomous research agent workflow."""
     try:

@@ -1,7 +1,7 @@
 import os
 import datetime
 from typing import Tuple, Dict, Any, List
-from pypdf import PdfReader
+import fitz  # PyMuPDF
 
 def load_file(file_path: str) -> Tuple[str, Dict[str, Any]]:
     """Loads a PDF or TXT file and returns its raw text (pages separated by form-feed \\x0c) and metadata.
@@ -44,14 +44,14 @@ def load_file(file_path: str) -> Tuple[str, Dict[str, Any]]:
 
     elif ext == ".pdf":
         try:
-            reader = PdfReader(file_path)
+            doc = fitz.open(file_path)
             pages_text: List[str] = []
-            for page in reader.pages:
-                text = page.extract_text() or ""
+            for page in doc:
+                text = page.get_text("text") or ""
                 pages_text.append(text)
 
             raw_text = "\x0c".join(pages_text)
-            metadata["page_count"] = len(reader.pages)
+            metadata["page_count"] = len(doc)
             return raw_text, metadata
         except Exception as e:
             raise ValueError(f"Failed to read PDF file {filename}: {str(e)}")

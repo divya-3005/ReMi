@@ -21,7 +21,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         return super().default(o)
 
-def run_research(question: str, store: FaissStore, min_confidence: float = 0.3, report_id: str = None) -> ResearchReport:
+def run_research(question: str, store: FaissStore, min_confidence: float = 0.01, report_id: str = None) -> ResearchReport:
     """
     Orchestrates the full research pipeline.
     """
@@ -71,7 +71,7 @@ def run_research(question: str, store: FaissStore, min_confidence: float = 0.3, 
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         future_to_idx = {
-            executor.submit(research_subquestion, sq, store, 5): (i, sq)
+            executor.submit(research_subquestion, sq, store, 10): (i, sq)
             for i, sq in enumerate(sub_questions)
         }
         

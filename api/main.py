@@ -48,7 +48,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "An unexpected server error occurred. Please try again later."}
+        content={"detail": "An unexpected server error occurred. Please try again later."},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 app.include_router(documents.router, prefix="/api")
