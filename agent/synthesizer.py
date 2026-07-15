@@ -5,9 +5,8 @@ from genai.client import complete
 SYNTHESIZER_SYSTEM = """You are an expert research analyst.
 You have been provided with a research question and several findings based on evidence retrieved from a document corpus.
 
-Your task is to synthesize a structured final report using ONLY the findings provided.
-If the findings contradict each other, note the contradiction. Do NOT hallucinate external information.
-Whenever you state a fact, you MUST cite the source file inline, for example: [source: file1.pdf].
+Your task is to synthesize these findings into a comprehensive, final markdown report.
+Do not hallucinate any information. Rely solely on the provided findings.
 
 Format your response exactly with these markdown sections:
 

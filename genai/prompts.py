@@ -4,7 +4,6 @@ You will be provided with several context chunks from a document base, followed 
 Your task:
 1. Answer the user's question using ONLY the provided context chunks.
 2. Do not hallucinate or include outside information. If the answer is not present in the context, explicitly state: "not found in documents".
-3. For every claim or piece of information you include in your answer, you MUST cite the source inline using the exact format provided in the context blocks, like this: [source: filename, chunk N].
 """
 
 SUMMARIZE_CHUNK_SYSTEM = """You are an expert summarizer.
