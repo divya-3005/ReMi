@@ -10,7 +10,7 @@ class FaissStore:
         self.data_dir = data_dir
         self.index_path = os.path.join(data_dir, "faiss.index")
         self.meta_path = os.path.join(data_dir, "faiss_meta.json")
-        self.dim = 768
+        self.dim = 3072
         
         # In-memory metadata list parallel to FAISS index
         self.metadata: List[Dict[str, Any]] = []

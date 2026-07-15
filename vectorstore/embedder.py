@@ -23,7 +23,7 @@ def embed_texts(texts: List[str]) -> np.ndarray:
         
     configure_gemini()
     result = genai.embed_content(
-        model="models/embedding-001",
+        model="models/gemini-embedding-001",
         content=texts,
         task_type="retrieval_document"
     )
@@ -35,7 +35,7 @@ def embed_query(query: str) -> np.ndarray:
     """
     configure_gemini()
     result = genai.embed_content(
-        model="models/embedding-001",
+        model="models/gemini-embedding-001",
         content=query,
         task_type="retrieval_query"
     )
