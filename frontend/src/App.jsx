@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Search, MessageSquare, Microscope, Activity, Wifi, WifiOff, Upload, HelpCircle, Zap } from 'lucide-react'
 import { ToastProvider } from './contexts/ToastContext'
@@ -110,8 +111,8 @@ function AppContent() {
   useEffect(() => {
     const check = async () => {
       try {
-        const res = await fetch('/api/health')
-        setBackendHealthy(res.ok)
+        const res = await axios.get('/api/health')
+        setBackendHealthy(res.status === 200)
       } catch {
         setBackendHealthy(false)
       }
@@ -125,11 +126,8 @@ function AppContent() {
   useEffect(() => {
     const checkDocs = async () => {
       try {
-        const res = await fetch('/api/documents')
-        if (res.ok) {
-          const data = await res.json()
-          setHasDocuments(data.length > 0)
-        }
+        const res = await axios.get('/api/documents')
+        setHasDocuments(res.data.length > 0)
       } catch {
         setHasDocuments(false)
       }
