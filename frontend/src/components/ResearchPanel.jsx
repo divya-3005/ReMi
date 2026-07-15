@@ -86,7 +86,7 @@ export default function ResearchPanel() {
 
   // Determine if we're done generating
   useEffect(() => {
-    if (reportData && (reportData.status === 'complete' || reportData.status === 'failed')) {
+    if (loading && reportData && (reportData.status === 'complete' || reportData.status === 'failed')) {
       setLoading(false)
       if (reportData.status === 'failed') {
         toast.error('Research task failed. Please try again.')
@@ -94,7 +94,7 @@ export default function ResearchPanel() {
         toast.success('Research report completed!')
       }
     }
-  }, [reportData, toast])
+  }, [reportData, toast, loading])
 
   return (
     <div className="space-y-8 flex flex-col h-full">
