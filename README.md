@@ -26,8 +26,8 @@ Unlike simple chat wrappers that hallucinate answers, ResearchMind explicitly gr
 ## ✨ Features
 
 - **Multi-Step Agentic Workflow**: Complex questions are broken down by a *Planner Agent*, investigated by specialized *Researcher Agents*, and filtered by an *Analyzer* before final synthesis.
-- **Advanced Hybrid RAG Pipeline**: Features *Semantic Chunking*, *Query Expansion (HyDE)*, and a dual-index **Hybrid Search engine** (FAISS Dense Vectors + BM25 Sparse Keywords) mathematically combined via **Reciprocal Rank Fusion (RRF)** to guarantee 100% exact-factoid retrieval.
-- **Production-Grade Extraction**: Uses `PyMuPDF` to intelligently extract multi-column layouts and tables from PDFs, rather than naive text scraping.
+- **Advanced Hybrid RAG Pipeline**: Integrates *Semantic Chunking*, *Query Expansion (HyDE)*, and a dual-index **Hybrid Search Engine** (FAISS Dense Vectors + BM25 Sparse Keywords) merged via **Reciprocal Rank Fusion (RRF)** to optimize factoid retrieval and minimize context loss.
+- **Robust Document Extraction**: Utilizes `PyMuPDF` for structurally aware parsing, preserving complex table geometries and multi-column layouts across diverse PDF formatting.
 - **Strict Evidence Grounding**: A custom NLP layer enforces that every sentence in the final report has a verifiable citation back to your uploaded PDF/TXT files.
 - **Automated RAG Evaluation**: Every research run generates quality scores for **Faithfulness**, **Answer Relevance**, **Context Precision**, and **Hallucination Risk**.
 - **Lightning Fast & Memory Efficient**: By offloading embeddings to the external **Google Gemini API**, ReMi runs complex semantic vector searches locally entirely within 512MB RAM constraints, guaranteeing 100% uptime on free tiers.
@@ -96,11 +96,11 @@ flowchart TD
 
 ## ☁️ Production Deployment
 
-ResearchMind is designed to be easily deployed for free to showcase in portfolios.
+ResearchMind is optimized for cost-effective cloud deployments without sacrificing performance.
 
-### 1. Backend (Render.com - Free Tier)
-Deploy the root folder as a Docker Web Service on Render. Because we offloaded heavy Machine Learning embeddings to the external Google Gemini API, it fits comfortably within Render's 512MB free RAM limit and never crashes.
-*Note: Render's free tier is ephemeral, meaning uploaded documents reset when the server sleeps. This creates a perfect, clean-slate demo environment for recruiters!*
+### 1. Backend (Render.com)
+Deploy the root folder as a Docker Web Service on Render. By offloading heavy Machine Learning embeddings to the external Google Gemini API, the backend maintains a remarkably low memory footprint, running comfortably within a 512MB RAM constraint while guaranteeing high availability.
+*Note: For ephemeral testing environments, uploaded documents will reset upon server restart. For persistent state, attach a managed volume.*
 
 ### 2. Frontend (Vercel - Free Tier)
 Deploy the `frontend/` folder to Vercel as a Vite project. 
