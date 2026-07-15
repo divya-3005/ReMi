@@ -72,7 +72,7 @@ export default function AskPanel() {
   }
 
   return (
-    <div className="space-y-8 flex flex-col h-full">
+    <div className="space-y-8 flex flex-col min-h-full">
       <div>
         <h2 className="text-xl font-semibold text-white">Ask AI</h2>
         <p className="text-sm text-slate-500 mt-1">Ask questions in plain English and get AI-generated answers with citations from your documents.</p>
@@ -137,7 +137,7 @@ export default function AskPanel() {
       )}
 
       {answerData && !loading && (
-        <div className="flex-1 overflow-y-auto glass-card p-8 shadow-xl">
+        <div className="flex-1 glass-card p-8 shadow-xl">
           <div className="flex gap-3 mb-8 pb-6 border-b border-white/5">
             <ScoreBadge label="Faithfulness" score={answerData.faithfulness_score} />
             <ScoreBadge label="Coverage" score={answerData.coverage_score} />

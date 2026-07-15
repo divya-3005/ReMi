@@ -97,7 +97,7 @@ export default function ResearchPanel() {
   }, [reportData, toast, loading])
 
   return (
-    <div className="space-y-8 flex flex-col h-full">
+    <div className="space-y-8 flex flex-col min-h-full">
       <div>
         <h2 className="text-xl font-semibold text-white">Deep Research</h2>
         <p className="text-sm text-slate-500 mt-1">Ask a complex question and our AI will research it thoroughly, piece by piece, and write a cited report.</p>
@@ -151,7 +151,7 @@ export default function ResearchPanel() {
       )}
 
       {reportData && (
-        <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-6">
           
           {/* Sub-questions Timeline */}
           <div className="glass-card p-6 shrink-0 shadow-lg">
@@ -235,7 +235,7 @@ export default function ResearchPanel() {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex-1 overflow-y-auto glass-card p-8 shadow-xl relative"
+              className="glass-card p-8 shadow-xl relative flex-1"
             >
               <div className="flex gap-3 mb-8 pb-6 border-b border-white/5 sticky top-0 bg-[#161b27]/90 backdrop-blur-md z-10 pt-2 -mt-2">
                 <ScoreBadge label="Faithfulness" score={reportData.faithfulness_score} />
