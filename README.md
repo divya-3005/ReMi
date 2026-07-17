@@ -41,7 +41,7 @@ Assume a fresh machine (MacOS/Linux) with Python 3.11+ and Node.js installed.
 
 ### 1. Setup Backend
 ```bash
-git clone https://github.com/divyasingh1/ReMi.git
+git clone https://github.com/divya-3005/ReMi.git
 cd ReMi
 python3 -m venv venv
 source venv/bin/activate
