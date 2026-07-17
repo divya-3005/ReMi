@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "Static frontend for ReMi",
   "scripts": {
-    "build": "mkdir -p dist && cp index.html style.css app.js dist/ || true"
+    "build": "mkdir -p dist && cp index.html style.css app.js dist/ && node -e \"const fs = require('fs'); let html = fs.readFileSync('dist/index.html', 'utf-8'); if(process.env.VITE_API_URL) { html = html.replace('</head>', '<script>window.API_BASE = \\'' + process.env.VITE_API_URL + '\\';</script></head>'); fs.writeFileSync('dist/index.html', html); }\""
   }
 }
