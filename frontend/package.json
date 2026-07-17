@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "Static frontend for ReMi",
   "scripts": {
-    "build": "echo 'No build needed for static HTML'"
+    "build": "mkdir -p dist && cp index.html style.css app.js dist/ || true"
   }
 }
