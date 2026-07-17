@@ -11,7 +11,17 @@
 'use strict';
 
 /* ── Configuration ────────────────────────────────────────────── */
-const API_BASE = window.location.port === '8080' ? 'http://localhost:8000' : '';
+let API_BASE = window.API_BASE || '';
+if (!API_BASE) {
+  // If running locally but NOT on the FastAPI port (8000), point to localhost:8000
+  if (['localhost', '127.0.0.1'].includes(window.location.hostname) && window.location.port !== '8000') {
+    API_BASE = 'http://localhost:8000';
+  } else if (window.location.protocol === 'file:') {
+    API_BASE = 'http://localhost:8000';
+  } else {
+    API_BASE = ''; // Use relative paths for Docker/Render deployments
+  }
+}
 
 /* ── Application State ────────────────────────────────────────── */
 let state = {
