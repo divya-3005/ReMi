@@ -1,0 +1,8 @@
+{
+  "name": "remi-frontend",
+  "version": "1.0.0",
+  "description": "Static frontend for ReMi",
+  "scripts": {
+    "build": "echo 'No build needed for static HTML'"
+  }
+}
