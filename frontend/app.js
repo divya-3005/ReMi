@@ -11,7 +11,7 @@
 'use strict';
 
 /* ── Configuration ────────────────────────────────────────────── */
-const API_BASE = window.API_BASE || 'http://localhost:8000';
+const API_BASE = window.location.port === '8080' ? 'http://localhost:8000' : '';
 
 /* ── Application State ────────────────────────────────────────── */
 let state = {

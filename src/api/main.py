@@ -23,6 +23,7 @@ from typing import List
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.agent.analyzer import AnalyzerAgent
@@ -285,3 +286,7 @@ async def delete_document(doc_id: str):
         )
     meta = _document_registry.pop(doc_id)
     return {"message": f"Document '{meta.filename}' removed from registry. Note: FAISS does not support in-place deletion; chunks remain in the index until the store is rebuilt."}
+
+# Mount frontend at root. Do this last so API routes take precedence.
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+
