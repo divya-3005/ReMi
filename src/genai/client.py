@@ -207,3 +207,35 @@ class GroqClient:
             return response.choices[0].message.content
 
         return _retry_with_backoff(_call, label="GroqClient.generate_text")
+
+
+class FallbackClient:
+    """
+    Wraps multiple clients and tries them sequentially.
+    If the primary client throws an LLMError (e.g., rate limit), it falls back
+    to the next client in the list.
+    """
+    def __init__(self, clients: list):
+        if not clients:
+            raise ValueError("FallbackClient requires at least one client.")
+        self.clients = clients
+
+    def generate(self, prompt: str, response_schema: Type[T]) -> T:
+        last_exc = None
+        for client in self.clients:
+            try:
+                return client.generate(prompt, response_schema)
+            except LLMError as e:
+                logger.warning(f"FallbackClient: {client.__class__.__name__} failed with {e}. Trying next client...")
+                last_exc = e
+        raise LLMError(f"All fallback clients failed. Last error: {last_exc}") from last_exc
+
+    def generate_text(self, prompt: str, temperature: float = 0.7) -> str:
+        last_exc = None
+        for client in self.clients:
+            try:
+                return client.generate_text(prompt, temperature)
+            except LLMError as e:
+                logger.warning(f"FallbackClient: {client.__class__.__name__} failed with {e}. Trying next client...")
+                last_exc = e
+        raise LLMError(f"All fallback clients failed. Last error: {last_exc}") from last_exc

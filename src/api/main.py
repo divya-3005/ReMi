@@ -34,7 +34,7 @@ from src.agent.synthesizer import SynthesizerAgent
 from src.agent.workflow import ResearchWorkflow
 from src.config import Settings, get_settings
 from src.evaluation.evaluator import EvaluatorAgent
-from src.genai.client import GeminiClient, GroqClient
+from src.genai.client import GeminiClient, GroqClient, FallbackClient
 from src.grounding.grounder import GrounderAgent
 from src.ingestion.chunker import RecursiveChunker
 from src.ingestion.errors import (
@@ -82,13 +82,17 @@ async def lifespan(app: FastAPI):
     _store = HybridStore(_embedder, _settings)
 
     # Agent chain
+
     gemini_client = GeminiClient(_settings)
     groq_client = GroqClient(_settings)
+    
+    # Use Gemini as primary, Groq as fallback for the heavier reasoning agents
+    primary_client = FallbackClient([gemini_client, groq_client])
 
-    planner = PlannerAgent(gemini_client)
+    planner = PlannerAgent(primary_client)
     researcher = ResearcherAgent(_store, groq_client, _settings)
     analyzer = AnalyzerAgent(groq_client, _settings)
-    synthesizer = SynthesizerAgent(gemini_client)
+    synthesizer = SynthesizerAgent(primary_client)
     grounder = GrounderAgent()
     evaluator = EvaluatorAgent(_embedder)
 
