@@ -1,17 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ResearchMind — Upload documents, ask questions, and get AI-generated answers with citations. Multi-agent research powered by RAG." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>ResearchMind — AI-Powered Document Research</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReMi — Research Mind</title>
+  <meta name="description" content="Upload your documents and ask research questions. Every claim in the report is traceable to an exact character span in your source." />
+
+  <!-- Fonts: Fraunces (display), Source Serif 4 (body), IBM Plex Mono (mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Source+Serif+4:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ═══ APP HEADER ═══ -->
+  <header class="app-header" role="banner">
+    <span class="app-name">ReMi</span>
+    <span class="app-tagline">Research from your documents, every claim traceable.</span>
+  </header>
+
+  <!-- ═══ THREE-COLUMN LAYOUT ═══ -->
+  <div class="layout" role="main">
+
+    <!-- LEFT COLUMN: Document index -->
+    <aside class="col-docs" aria-label="Document index">
+      <h2 class="col-heading">Documents</h2>
+
+      <div id="doc-list" class="doc-list" aria-live="polite" aria-label="Uploaded documents">
+        <p class="empty-state" id="doc-empty-state">No documents yet. Upload a PDF or TXT file to begin.</p>
+      </div>
+
+      <div class="upload-area">
+        <label for="file-input" class="upload-label">
+          <span>Upload document</span>
+          <input
+            id="file-input"
+            type="file"
+            accept=".pdf,.txt"
+            aria-label="Upload a PDF or TXT document"
+            class="sr-only"
+          />
+        </label>
+        <div id="upload-status" class="upload-status" role="status" aria-live="polite"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER COLUMN: Query + Report -->
+    <section class="col-report" aria-label="Research query and report">
+
+      <!-- Query input -->
+      <div class="query-section">
+        <label for="query-input" class="query-label">Ask a question</label>
+        <div class="query-row">
+          <input
+            id="query-input"
+            type="text"
+            class="query-input"
+            placeholder="What does the report say about monetary policy in 2022?"
+            aria-label="Research question"
+            autocomplete="off"
+            spellcheck="true"
+          />
+          <button id="research-btn" class="btn-research" aria-label="Run research">
+            Research →
+          </button>
+        </div>
+      </div>
+
+      <div class="rule-divider" role="separator"></div>
+
+      <!-- Report area -->
+      <div id="report-area" class="report-area" aria-live="polite" aria-label="Research report">
+        <div class="report-placeholder">
+          <p>Your research report will appear here as continuous prose, with inline citation markers linking each claim to the exact source passage.</p>
+        </div>
+      </div>
+
+      <!-- Workflow trace (below report) -->
+      <div id="workflow-trace" class="workflow-trace" aria-label="Workflow attempt trace" hidden></div>
+
+      <!-- Evaluation scores (below trace) -->
+      <div id="evaluation-panel" class="evaluation-panel" hidden></div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: Source viewer -->
+    <aside class="col-source" aria-label="Source document viewer" id="source-col">
+      <h2 class="col-heading">Source</h2>
+      <div class="source-prompt" id="source-prompt">
+        Click a citation marker in the report to view the source passage.
+      </div>
+      <div id="source-viewer" class="source-viewer" hidden>
+        <div class="source-meta" id="source-meta"></div>
+        <div class="source-text" id="source-text" aria-live="polite"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MOBILE: Source bottom sheet -->
+  <div id="source-sheet" class="source-sheet" role="dialog" aria-modal="true" aria-label="Source passage" hidden>
+    <div class="source-sheet-handle" role="presentation"></div>
+    <div class="source-sheet-inner">
+      <div class="source-meta" id="source-meta-mobile"></div>
+      <div class="source-text" id="source-text-mobile"></div>
+    </div>
+    <button class="source-sheet-close" id="source-sheet-close" aria-label="Close source viewer">✕</button>
+  </div>
+  <div id="source-sheet-backdrop" class="source-sheet-backdrop" hidden></div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
+
+  <script src="app.js"></script>
+</body>
 </html>

@@ -1,136 +1,86 @@
-<div align="center">
-  <img src="frontend/public/logo.png" alt="ResearchMind Logo" width="120"/>
-  <h1>ResearchMind 🧠</h1>
+# ReMi — Research Mind
 
-  <p><strong>An autonomous, multi-agent RAG platform that reads your documents, runs deep research workflows, and generates rigorously cited reports.</strong></p>
+ReMi is an agentic research assistant that answers questions from your uploaded documents. 
+Its core design constraint is absolute traceability: every factual claim in the generated report is linked to an exact character span in the source documents.
 
-  <p>
-    <a href="#-features">Features</a> •
-    <a href="#-quick-start-5-minutes">Quick Start</a> •
-    <a href="#%EF%B8%8F-architecture">Architecture</a> •
-    <a href="#-production-deployment">Deployment</a>
-  </p>
+## Why this exists
 
-  <p>
-    <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python Version" />
-    <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black" alt="React" />
-    <img src="https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
-    <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
-  </p>
-</div>
+Most RAG (Retrieval-Augmented Generation) systems use a simple "retrieve then synthesize" pipeline. This fails in two ways:
+1. **Low Recall**: A single generic search query misses nuance.
+2. **Hallucination**: The synthesizer drifts from the retrieved context.
 
----
+ReMi solves this using a **multi-agent feedback loop**. If the initial report isn't sufficiently grounded in the retrieved sources, the system detects the failure, reformulates the search strategy based on the exact failure metrics, and tries again.
 
-Unlike simple chat wrappers that hallucinate answers, ResearchMind explicitly grounds every claim it makes to exact character spans in your source text. It evaluates its own performance quantitatively and runs inside a premium, glass-morphism web interface.
+## Architecture
 
-## ✨ Features
+ReMi uses a pipeline of specialized agents:
 
-- **Multi-Step Agentic Workflow**: Complex questions are broken down by a *Planner Agent*, investigated by specialized *Researcher Agents*, and filtered by an *Analyzer* before final synthesis.
-- **Advanced Hybrid RAG Pipeline**: Integrates *Semantic Chunking*, *Query Expansion (HyDE)*, and a dual-index **Hybrid Search Engine** (FAISS Dense Vectors + BM25 Sparse Keywords) merged via **Reciprocal Rank Fusion (RRF)** to optimize factoid retrieval and minimize context loss.
-- **Robust Document Extraction**: Utilizes `PyMuPDF` for structurally aware parsing, preserving complex table geometries and multi-column layouts across diverse PDF formatting.
-- **Strict Evidence Grounding**: A custom NLP layer enforces that every sentence in the final report has a verifiable citation back to your uploaded PDF/TXT files.
-- **Automated RAG Evaluation**: Every research run generates quality scores for **Faithfulness**, **Answer Relevance**, **Context Precision**, and **Hallucination Risk**.
-- **Lightning Fast & Memory Efficient**: By offloading embeddings to the external **Google Gemini API**, ReMi runs complex semantic vector searches locally entirely within 512MB RAM constraints, guaranteeing 100% uptime on free tiers.
-- **Beautiful UI**: A responsive React/Vite frontend with dynamic toast notifications, real-time polling, and detailed metric dashboards.
+1. **Planner**: Decomposes the user's query into focused sub-questions and generates HyDE (Hypothetical Document Embeddings) search variants for each.
+2. **Researcher**: Retrieves chunks for each sub-question using a thread-safe `HybridStore` (FAISS dense + BM25 sparse + Reciprocal Rank Fusion) and synthesizes an initial answer.
+3. **Analyzer**: Uses a fast inference model (Groq) to score and filter retrieved chunks. Low-confidence chunks are dropped; if all chunks fail the threshold, the best one is kept but flagged.
+4. **Synthesizer**: Compiles the findings into a continuous Markdown report with `[^1]` footnote markers.
+5. **Grounder**: Uses `difflib` fuzzy matching to link each footnote back to absolute character spans in the source document.
+6. **Evaluator**: Scores the final report on 4 metrics: `citation_coverage`, `citation_utilization`, `answer_relevance`, and `hallucination_risk`.
 
----
+### The Agentic Feedback Loop
 
-## 🚀 Quick Start (5 Minutes)
+This is the core of ReMi. If the Evaluator's scores fall below configured thresholds (e.g., `citation_coverage < 0.55`), the workflow triggers a retry.
+Crucially, it does **not** just blindly retry or lower thresholds. It passes the exact failure scores back to the Planner, along with the previous failed sub-questions, instructing the LLM to reformulate its search strategy.
 
-Assume a fresh machine (MacOS/Linux) with Python 3.11+ and Node.js installed.
+## Design Decisions & Known Limitations
 
-### 1. Setup Backend
+- **Model Abstraction**: Model names are strictly abstracted behind `config.py`. No hardcoded strings. This protects against rapid model deprecation (e.g., Google's 1.5 Flash deprecation).
+- **Concurrency**: `HybridStore` is fully thread-safe. Dense embedding calls happen *outside* the read/write lock so network latency doesn't serialize concurrent reads.
+- **difflib Grounding Proxy**: The Grounder uses string similarity (0.6 threshold). This measures *traceability* (did the LLM use the text?), not *truth* (did the LLM use it correctly?). 
+- **FAISS Deletion**: FAISS `IndexFlatIP` does not support in-place deletion. Deleting a document via the API removes it from the registry, but its chunks remain searchable until the index is rebuilt.
+
+## Setup & Running
+
 ```bash
+# 1. Install dependencies
 git clone https://github.com/divya-3005/ReMi.git
 cd ReMi
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-```
 
-### 2. Configure Environment
-```bash
+# 2. Configure API keys
 cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
+# Edit .env and add your GEMINI_API_KEY and GROQ_API_KEY
+
+# 3. Start the API server
+python cli.py serve
+# Or use uvicorn directly: uvicorn src.api.main:app --reload
+
+# 4. Open the Frontend
+# Open frontend/index.html in your browser.
+# Ensure API_BASE points to http://localhost:8000
 ```
 
-### 3. Start the Platform
-```bash
-# Start FastAPI backend (Port 8000)
-python cli.py serve &
+## CLI Usage
 
-# Start React frontend (Port 5173)
-cd frontend
-npm install
-npm run dev
-```
-
-Navigate to `http://localhost:5173` to view the application!
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart TD
-    UI[React Web App] -->|User Query| API[FastAPI Backend]
-    API --> Planner[Planner Agent]
-    
-    subgraph Multi-Agent Research Workflow
-        Planner -->|Decomposes Query| SubQs[Sub-Questions]
-        SubQs --> Researcher[Researcher Agents]
-        Researcher -->|Hybrid Search| VectorStore[(FAISS + BM25)]
-        VectorStore -->|Reciprocal Rank Fusion| Analyzer[Analyzer Agent]
-        Analyzer -->|Filter & Rank| Synthesizer[Synthesizer Agent]
-    end
-    
-    Synthesizer -->|Draft Report| Grounding[Grounding Layer]
-    Grounding -->|Link Claims to Spans| Evaluator[Evaluation Layer]
-    Evaluator -->|Score Quality| FinalReport[Final Markdown Report]
-    FinalReport --> API
-    API --> UI
-```
-
----
-
-## ☁️ Production Deployment
-
-ResearchMind is optimized for cost-effective cloud deployments without sacrificing performance.
-
-### 1. Backend (Render.com)
-Deploy the root folder as a Docker Web Service on Render. By offloading heavy Machine Learning embeddings to the external Google Gemini API, the backend maintains a remarkably low memory footprint, running comfortably within a 512MB RAM constraint while guaranteeing high availability.
-*Note: For ephemeral testing environments, uploaded documents will reset upon server restart. For persistent state, attach a managed volume.*
-
-### 2. Frontend (Vercel - Free Tier)
-Deploy the `frontend/` folder to Vercel as a Vite project. 
-To securely link it to your backend without exposing the URL in your code:
-- Go to Vercel Project Settings → Environment Variables
-- Add `VITE_API_URL` and set it to your Render URL (e.g., `https://remi-backend-xyz.onrender.com`).
-
----
-
-## 💻 CLI Usage
-
-You can orchestrate the entire pipeline directly from the terminal without the web UI:
+ReMi also includes a Typer CLI:
 
 ```bash
-# Ingest a document into the FAISS vector store
-python cli.py ingest /path/to/document.pdf
+# Upload a document
+python cli.py upload /path/to/document.pdf
 
-# Run a full agentic research query
-python cli.py research "What are the core capabilities of the ingested document?"
+# Ask a question
+python cli.py ask "What were the main causes of the 2008 financial crisis?"
 
-# Check document store stats
-python cli.py stats
+# Get raw JSON output
+python cli.py ask "What is quantitative easing?" --json
 ```
 
----
+## Project Structure
 
-## 📊 Evaluation Metrics
-
-ResearchMind doesn't just guess quality; it calculates it:
-- **Faithfulness:** Ratio of generated sentences that map back to a source chunk.
-- **Answer Relevance:** Cosine similarity between query and final report.
-- **Context Precision:** Percentage of retrieved chunks that were actually useful.
-- **Hallucination Risk:** Inverse of faithfulness (1.0 - Faithfulness, lower is better).
+- `src/agent/` - The core LLM agents and workflow logic.
+- `src/api/` - FastAPI REST endpoints.
+- `src/evaluation/` - Quality scoring metrics.
+- `src/genai/` - LLM client wrappers and pure prompt functions.
+- `src/grounding/` - difflib citation matching.
+- `src/ingestion/` - PDF/TXT parsing and chunking.
+- `src/models/` - Pydantic schemas.
+- `src/vectorstore/` - Hybrid FAISS/BM25 retrieval.
+- `frontend/` - HTML/CSS/JS UI implementation.
+- `tests/` - Comprehensive test suite (153 tests).

@@ -1,35 +1,46 @@
-# Environments
-venv/
-env/
-.env
-
-# Python caches
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-.pytest_cache/
+*.pyo
+*.pyd
+.Python
 *.egg-info/
-
-# Local databases and FAISS indices
-data/
-storage/
-store.json
-documents.json
-faiss.index
-faiss_meta.json
-sample_doc.txt
-
-# Frontend
-node_modules/
 dist/
-.cache/
+build/
+.eggs/
 
-# IDE & OS
-.DS_Store
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment
+.env
+
+# Vector store artifacts
+*.faiss
+*.pkl
+data/vectorstore/
+
+# spaCy models downloaded locally
+en_core_web_sm/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Agents
-.agents/
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
