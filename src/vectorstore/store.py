@@ -16,7 +16,7 @@ from __future__ import annotations
 import pickle
 import threading
 from pathlib import Path
-from typing import List
+from typing import List, cast
 
 import faiss
 import numpy as np
@@ -28,7 +28,7 @@ from src.vectorstore.embedder import GeminiEmbedder
 
 
 class HybridStore:
-    def __init__(self, embedder: GeminiEmbedder, settings: Settings):
+    def __init__(self, embedder: GeminiEmbedder, settings: Settings) -> None:
         self.embedder = embedder
         self.dim = settings.embedding_dim
         self.rrf_k = settings.rrf_k_constant
@@ -39,7 +39,7 @@ class HybridStore:
         # Internal state
         self._init_empty_state()
 
-    def _init_empty_state(self):
+    def _init_empty_state(self) -> None:
         """Initialize or reset all internal indices."""
         # FAISS IndexFlatIP uses Inner Product (cosine sim if vectors are normalized).
         # We don't normalize here because Gemini embeddings are generally close to
@@ -208,7 +208,7 @@ class HybridStore:
             self._init_empty_state()
 
             # Load FAISS
-            self.faiss_index = faiss.read_index(str(path / "index.faiss"))
+            self.faiss_index = cast(faiss.IndexFlatIP, faiss.read_index(str(path / "index.faiss")))
 
             # Load registry
             with open(path / "registry.pkl", "rb") as f:

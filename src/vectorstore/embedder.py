@@ -61,7 +61,7 @@ class GeminiEmbedder:
         Execute the embed_content call with exponential backoff.
         Raises EmbeddingError if all retries are exhausted.
         """
-        config = genai_types.EmbedContentConfig(taskType=task_type)
+        config = genai_types.EmbedContentConfig(task_type=task_type)
         delay = 1.0
 
         for attempt in range(self.MAX_RETRIES + 1):
@@ -96,8 +96,9 @@ class GeminiEmbedder:
             A list of floats representing the embedding vector.
         """
         response = self._call_api_with_retry(query, "RETRIEVAL_QUERY")
-        # response.embeddings is a list[ContentEmbedding]; single input → index 0
-        return list(response.embeddings[0].values)
+        if response.embeddings and response.embeddings[0].values:
+            return [float(v) for v in response.embeddings[0].values]
+        return []
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """
@@ -121,8 +122,12 @@ class GeminiEmbedder:
             try:
                 response = self._call_api_with_retry(batch, "RETRIEVAL_DOCUMENT")
                 # response.embeddings[j].values is the embedding for batch[j]
-                for emb in response.embeddings:
-                    all_embeddings.append(list(emb.values))
+                if response.embeddings:
+                    for emb in response.embeddings:
+                        if emb.values:
+                            all_embeddings.append([float(v) for v in emb.values])
+                        else:
+                            all_embeddings.append([0.0] * self.dim)
             except EmbeddingError as e:
                 logger.error(
                     f"Batch {i // self.BATCH_SIZE} (items {i}–{i + len(batch) - 1}) "

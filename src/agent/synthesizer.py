@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from src.genai.client import GeminiClient
+from src.genai.client import GeminiClient, FallbackClient
 from src.genai.prompts import synthesizer_prompt
 from src.models.schemas import ResearchResult
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SynthesizerAgent:
     """Synthesizes a complete Markdown research report from analyzed findings."""
 
-    def __init__(self, client: GeminiClient):
+    def __init__(self, client: GeminiClient | FallbackClient):
         self._client = client
 
     def synthesize(self, query: str, results: List[ResearchResult]) -> str:

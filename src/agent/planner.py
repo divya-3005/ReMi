@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import logging
 
-from src.genai.client import GeminiClient
+from typing import Any
+from src.genai.client import GeminiClient, FallbackClient
 from src.genai.prompts import planner_prompt
 from src.models.schemas import ResearchPlan
 
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 class PlannerAgent:
     """Decomposes a research query into a structured ResearchPlan."""
 
-    def __init__(self, client: GeminiClient):
+    def __init__(self, client: GeminiClient | FallbackClient):
         self._client = client
 
     def plan(self, query: str, num_sub_questions: int = 3) -> ResearchPlan:

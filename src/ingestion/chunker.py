@@ -142,7 +142,7 @@ class RecursiveChunker:
             return []
 
         merged = []
-        current_doc = []
+        current_doc: List[tuple[int, int, str]] = []
         current_len = 0
         current_start = -1
 
@@ -161,7 +161,7 @@ class RecursiveChunker:
                 # Setup the next chunk to include overlap from the end of the previous
                 # Walk backward through current_doc until we have approximately 'overlap' chars
                 overlap_len = 0
-                overlap_docs = []
+                overlap_docs: List[tuple[int, int, str]] = []
                 for doc_start, doc_end, doc_text in reversed(current_doc):
                     if overlap_len + len(doc_text) > self.chunk_overlap and overlap_len > 0:
                         break

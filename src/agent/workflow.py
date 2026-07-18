@@ -148,6 +148,8 @@ class ResearchWorkflow:
                 plan = self._planner.plan(query)
             else:
                 # Build the reformulation prompt with failure context from last attempt
+                assert last_plan is not None
+                assert last_evaluation is not None
                 prev_sub_questions = [sq.question for sq in last_plan.sub_questions]
                 reformat_prompt = reformulation_prompt(
                     query=query,
@@ -250,6 +252,7 @@ class ResearchWorkflow:
                 break
 
         elapsed = time.time() - start_time
+        assert final_evaluation is not None
 
         return AgentReport(
             query=query,

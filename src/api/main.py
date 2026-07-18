@@ -180,6 +180,7 @@ async def health():
 @app.get("/documents", response_model=List[DocumentInfo])
 async def list_documents():
     """List all ingested documents with their chunk counts."""
+    assert _store is not None
     result = []
     for doc_id, meta in _document_registry.items():
         chunk_count = sum(
@@ -203,6 +204,7 @@ async def upload_document(file: UploadFile = File(...)):
     The file is written to a temp path, processed, and then deleted.
     Chunks are embedded and indexed in the HybridStore.
     """
+    assert file.filename is not None
     suffix = Path(file.filename).suffix.lower()
     if suffix not in {".pdf", ".txt"}:
         raise HTTPException(
@@ -217,6 +219,7 @@ async def upload_document(file: UploadFile = File(...)):
         tmp_path.write_bytes(content)
 
         try:
+            assert _loader is not None
             meta, text = _loader.load(tmp_path)
         except UnsupportedFileTypeError as e:
             raise HTTPException(status_code=415, detail={"code": "UNSUPPORTED_FILE_TYPE", "message": str(e)})
@@ -227,6 +230,7 @@ async def upload_document(file: UploadFile = File(...)):
         except CorruptedFileError as e:
             raise HTTPException(status_code=422, detail={"code": "CORRUPTED_FILE", "message": str(e)})
 
+        assert _chunker is not None
         chunks = _chunker.chunk(text, meta)
         if not chunks:
             raise HTTPException(
@@ -234,6 +238,7 @@ async def upload_document(file: UploadFile = File(...)):
                 detail={"code": "EMPTY_TEXT", "message": "Document produced no chunks after splitting."}
             )
 
+        assert _store is not None
         _store.add_chunks(chunks)
         _document_registry[meta.doc_id] = meta
 
@@ -265,12 +270,14 @@ async def research(request: ResearchRequest):
             detail={"code": "EMPTY_QUERY", "message": "Query must not be empty."}
         )
 
+    assert _store is not None
     if _store.count() == 0:
         raise HTTPException(
             status_code=422,
             detail={"code": "NO_DOCUMENTS", "message": "Upload at least one document before running a research query."}
         )
 
+    assert _workflow is not None
     report: AgentReport = _workflow.run(request.query)
 
     return ResearchResponse(
