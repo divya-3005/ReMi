@@ -11,7 +11,7 @@
 'use strict';
 
 /* ── Configuration ────────────────────────────────────────────── */
-let API_BASE = window.API_BASE || '';
+let API_BASE = import.meta.env?.VITE_API_URL || '';
 if (!API_BASE) {
   // If running locally but NOT on the FastAPI port (8000), point to localhost:8000
   if (['localhost', '127.0.0.1'].includes(window.location.hostname) && window.location.port !== '8000') {

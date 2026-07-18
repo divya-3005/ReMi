@@ -9,6 +9,27 @@ Unlike standard RAG pipelines that simply "retrieve and synthesize," ReMi utiliz
 
 ## 🌟 Key Features & Engineering Highlights
 
+### System Architecture
+
+```mermaid
+graph TD
+    User([User Query]) --> Planner
+    Planner --> Researcher
+    Researcher --> Analyzer
+    Analyzer --> Synthesizer
+    Synthesizer --> Grounder
+    Grounder --> Evaluator
+    
+    Evaluator -- "Quality Gate Failed\n(Reformulate Query)" --> Planner
+    Evaluator -- "Quality Gate Passed" --> FinalReport([Final Report with citations])
+    
+    subgraph "Knowledge Base"
+        HybridStore[(Hybrid Vector Store\nFAISS + BM25)]
+    end
+    
+    Researcher <--> HybridStore
+```
+
 ### 1. Multi-Agent Feedback Loop
 ReMi orchestrates a pipeline of specialized agents. If the final report falls below configured quality thresholds (e.g., low citation coverage), the **Evaluator** triggers a retry, passing the exact failure metrics back to the **Planner** to autonomously reformulate the search strategy.
 * **Planner**: Decomposes complex queries into focused sub-questions and generates HyDE variants.
@@ -54,14 +75,30 @@ Ensure you provide:
 - `GEMINI_API_KEY`
 - `GROQ_API_KEY`
 
-### 3. Start the Backend API
-Start the FastAPI server (runs on `localhost:8000`):
+### 3. Start the Application
+
+The easiest way to start both the backend and frontend is using **Docker Compose**:
+
+```bash
+docker-compose up --build
+```
+This will start:
+- **Backend API**: `http://localhost:8000`
+- **Frontend UI**: `http://localhost:8080`
+
+#### Local Development (Without Docker)
+
+**Backend API:**
 ```bash
 uvicorn src.api.main:app --reload
 ```
 
-### 4. Start the Frontend
-In a new terminal window, serve the frontend on `localhost:8080`:
+**Production Backend Server:**
+```bash
+gunicorn src.api.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+**Frontend (New Terminal):**
 ```bash
 python3 -m http.server 8080 --directory frontend/
 ```
